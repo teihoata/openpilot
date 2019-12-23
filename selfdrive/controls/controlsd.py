@@ -75,8 +75,6 @@ def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, pa
   can_strs = messaging.drain_sock_raw(can_sock, wait_for_one=True)
   CS = CI.update(CC, can_strs)
 
-  sm.update(0)
-
   events = list(CS.events)
   add_lane_change_event(events, sm['pathPlan'])
   enabled = isEnabled(state)
@@ -555,6 +553,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   prof = Profiler(False)  # off by default
 
   while True:
+    sm.update(0)
     start_time = sec_since_boot()
     prof.checkpoint("Ratekeeper", ignore=True)
 
