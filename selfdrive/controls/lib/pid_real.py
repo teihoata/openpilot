@@ -22,10 +22,11 @@ class PIController():
 
     self.sat_count_rate = 1.0 / rate
     self.i_unwind_rate = 0.3 / rate
-    self.rate = 1.0 / rate
+    self.i_rate = 1.0 / rate
+    self.d_rate = 7.0 / rate
     self.sat_limit = sat_limit
     self.convert = convert
-    self.last_error = 0
+    self.past_errors = []
 
     self.reset()
 
@@ -67,13 +68,14 @@ class PIController():
     error = float(apply_deadzone(setpoint - measurement, deadzone))
     self.p = error * self.k_p
     self.f = feedforward * self.k_f
+    self.d = 0.0
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
-      self.d = 0.0
     else:
-      i = self.i + error * self.k_i * self.rate
-      self.d = self.k_d * ((error - self.last_error) / self.rate)
+      i = self.i + error * self.k_i * self.i_rate
+      if len(self.past_errors) >= 7:
+        self.d = self.k_d * ((error - self.past_errors[-7]) / self.d_rate)
       control = self.p + self.f + i  # + self.d  # todo: should we add derivative here?
 
       if self.convert is not None:
@@ -86,7 +88,7 @@ class PIController():
          not freeze_integrator:
         self.i = i
 
-    self.last_error = error
+    self.past_errors.append(error)
     control = self.p + self.f + self.i + self.d  # adds derivative
     if self.convert is not None:
       control = self.convert(control, speed=self.speed)
