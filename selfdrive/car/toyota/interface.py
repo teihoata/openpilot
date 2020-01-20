@@ -9,6 +9,7 @@ from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness,
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.interfaces import CarInterfaceBase
 from common.travis_checker import travis
+from common.op_params import opParams
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
@@ -17,6 +18,8 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
+    self.op_params = opParams()
+    self.keep_openpilot_engaged = self.op_params.get('keep_openpilot_engaged', default=False)
 
     self.frame = 0
     self.gas_pressed_prev = False
@@ -334,7 +337,11 @@ class CarInterface(CarInterfaceBase):
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     # cruise state
-    ret.cruiseState.enabled = self.CS.pcm_acc_active
+    # ret.cruiseState.enabled = self.CS.pcm_acc_active
+    if not self.cruise_enabled_prev or self.keep_openpilot_engaged:
+      ret.cruiseState.enabled = self.CS.pcm_acc_active
+    else:
+      ret.cruiseState.enabled = bool(self.CS.main_on)
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
@@ -413,7 +420,7 @@ class CarInterface(CarInterfaceBase):
 
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     if (ret.gasPressed and not self.gas_pressed_prev and travis) or \
-       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
+       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001) and not self.keep_openpilot_engaged):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
     if ret.gasPressed and travis:
