@@ -5,6 +5,7 @@ import string
 import random
 from common.travis_checker import travis
 
+
 def write_params(params, params_file):
   if not travis:
     with open(params_file, "w") as f:
