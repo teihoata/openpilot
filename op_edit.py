@@ -45,11 +45,9 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       return 'error', choice
     else:
       self.message('Not an integer!')
-      time.sleep(self.sleep_time)
       return 'retry', choice
     if choice not in range(0, len(self.params) + 2):  # three for add/delete parameter
       self.message('Not in range!')
-      time.sleep(self.sleep_time)
       return 'continue', choice
 
     if choice == len(self.params):  # add new parameter
@@ -112,7 +110,6 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         self.message('Saved!')
       else:
         self.message('Not saved!')
-      time.sleep(self.sleep_time)
       return
 
   def parse_input(self, dat):
@@ -150,10 +147,9 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       choice = input('[Y/n]: ').lower().strip()
       if choice == 'y':
         self.op_params.delete(key)
-        print('\nDeleted!\n')
+        self.message('Deleted!')
       else:
         self.message('Not saved!')
-      time.sleep(self.sleep_time)
       return
 
   def add_parameter(self):
@@ -187,7 +183,6 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         self.message('Saved!')
       else:
         self.message('Not saved!')
-      time.sleep(self.sleep_time)
       return
 
   def message(self, msg):
