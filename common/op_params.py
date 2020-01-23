@@ -117,18 +117,20 @@ class opParams:
     self.params.update({key: value})
     write_params(self.params, self.params_file)
 
-  def get(self, key=None, default=None):  # can specify a default value if key doesn't exist
-    if key is None:
+  def get(self, key=None, default=None, all_params=False):  # can specify a default value if key doesn't exist
+    self.update_params(key, all_params)
+    if key is None or all_params:
       return self.params
-    if not travis and key in self.default_params and self.default_params[key]['live']:  # if is a live param, we want to get updates while openpilot is running
-      if time.time() - self.last_read_time >= self.read_frequency:  # make sure we aren't reading file too often
+    return self.params[key] if key in self.params else default
+
+  def update_params(self, key, all_params):
+    if all_params or (key in self.default_params and 'live' in self.default_params[key] and self.default_params[key]['live']):  # if is a live param, we want to get updates while openpilot is running
+      if not travis and time.time() - self.last_read_time >= self.read_frequency:  # make sure we aren't reading file too often
         self.params, read_status = read_params(self.params_file, self.format_default_params())
         if not read_status:
-          time.sleep(0.01)
-          self.params, read_status = read_params(self.params_file, self.format_default_params())  # if the file was being written to, retry once
-        self.last_read_time = time.time()
-
-    return self.params[key] if key in self.params else default
+          time.sleep(1/100.)
+          self.params, _ = read_params(self.params_file, self.format_default_params())  # if the file was being written to, retry once
+      self.last_read_time = time.time()
 
   def delete(self, key):
     if key in self.params:

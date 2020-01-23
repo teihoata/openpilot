@@ -15,7 +15,6 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
     print('Here are your parameters:\n')
     while True:
       self.params = self.op_params.get()
-
       values_list = [self.params[i] if len(str(self.params[i])) < 20 else '{} ... {}'.format(str(self.params[i])[:30], str(self.params[i])[-15:]) for i in self.params]
       live = [' (live!)' if i in self.op_params.default_params and self.op_params.default_params[i]['live'] else '' for i in self.params]
 
