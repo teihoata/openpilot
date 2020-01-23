@@ -54,7 +54,7 @@ class opTune:
         self.message('Cannot parse input!')
         continue
 
-      if not any([isinstance(value, typ) for typ in allowed_types]):
+      if has_allowed_types and not any([isinstance(value, typ) for typ in allowed_types]):
         self.message('The type of data you entered ({}) is not allowed with this parameter!\n'.format(str(type(value)).split("'")[1]))
         continue
       self.op_params.put(chosen_key, value)
