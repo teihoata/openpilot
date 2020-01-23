@@ -127,7 +127,6 @@ class opParams:
     if force_update or (key in self.default_params and 'live' in self.default_params[key] and self.default_params[key]['live']):  # if is a live param, we want to get updates while openpilot is running
       if not travis and time.time() - self.last_read_time >= self.read_frequency:  # make sure we aren't reading file too often
         self.params, read_status = read_params(self.params_file, self.format_default_params())
-        print('read op file')
         if not read_status:
           time.sleep(1/100.)
           self.params, _ = read_params(self.params_file, self.format_default_params())  # if the file was being written to, retry once
