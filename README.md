@@ -78,7 +78,7 @@ This is a handy tool to change your `opParams` parameters without diving into an
 cd /data/openpilot
 python op_edit.py
 ```
-A list of parameters that you can change are located [here](common/op_params.py#L29).
+A list of parameters that you can modify are located [here](common/op_params.py#L42).
 
 Parameters are stored at `/data/op_params.json`
 

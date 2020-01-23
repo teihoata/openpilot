@@ -90,6 +90,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       print('Enter your new value:')
       new_value = input('>> ').strip()
       if new_value == '':
+        self.message('Exiting this parameter...')
         return
 
       status, new_value = self.parse_input(new_value)
