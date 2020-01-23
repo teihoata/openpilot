@@ -75,17 +75,18 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       print('Chosen parameter: {}'.format(chosen_key))
       print('Current value: {} (type: {})'.format(old_value, str(type(old_value)).split("'")[1]))
 
+      to_print = []
       if has_description:
-        print('\n- Description: {}'.format(self.op_params.default_params[chosen_key]['description'].replace('\n', '\n  ')))
+        to_print.append('- Description: {}'.format(self.op_params.default_params[chosen_key]['description'].replace('\n', '\n  ')))
       if has_allowed_types:
         allowed_types = self.op_params.default_params[chosen_key]['allowed_types']
-        print('- Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in allowed_types])))
+        to_print.append('- Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in allowed_types])))
       if live:
-        print('- This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
-        print('Try out opTune! It\'s designed to help you live tune parameters quicker.')
-        print('Just exit out of this and type: \'python op_tune.py\'\n')
-      else:
-        print()
+        to_print.append('- This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
+        to_print.append('Try out opTune! It\'s designed to help you live tune parameters quicker.')
+        to_print.append('Just exit out of this and type: \'python op_tune.py\'')
+
+      print('\n{}\n'.format('\n'.join(to_print)))
 
       print('Enter your new value:')
       new_value = input('>> ').strip()
