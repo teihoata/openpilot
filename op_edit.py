@@ -63,26 +63,30 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
   def change_parameter(self, choice):
     while True:
       chosen_key = list(self.params)[choice]
-      extra_info = False
+      has_description = False
+      has_allowed_types = False
       live = False
       if chosen_key in self.op_params.default_params:
-        extra_info = True
-        allowed_types = self.op_params.default_params[chosen_key]['allowed_types']
-        description = self.op_params.default_params[chosen_key]['description']
-        live = self.op_params.default_params[chosen_key]['live']
+        has_description = 'description' in self.op_params.default_params[chosen_key]
+        has_allowed_types = 'allowed_types' in self.op_params.default_params[chosen_key]
+        live = 'live' in self.op_params.default_params[chosen_key] and self.op_params.default_params[chosen_key]['live']
 
       old_value = self.params[chosen_key]
       print('Chosen parameter: {}'.format(chosen_key))
       print('Current value: {} (type: {})'.format(old_value, str(type(old_value)).split("'")[1]))
-      if extra_info:
-        print('\n- Description: {}'.format(description.replace('\n', '\n  ')))
+
+      if has_description:
+        print('\n- Description: {}'.format(self.op_params.default_params[chosen_key]['description'].replace('\n', '\n  ')))
+      if has_allowed_types:
+        allowed_types = self.op_params.default_params[chosen_key]['allowed_types']
         print('- Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in allowed_types])))
-        if live:
-          print('- This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
-          print('Try out opTune! It\'s designed to help you live tune parameters quicker.')
-          print('Just exit out of this and type: \'python op_tune.py\'\n')
-        else:
-          print()
+      if live:
+        print('- This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
+        print('Try out opTune! It\'s designed to help you live tune parameters quicker.')
+        print('Just exit out of this and type: \'python op_tune.py\'\n')
+      else:
+        print()
+
       print('Enter your new value:')
       new_value = input('>> ').strip()
       if new_value == '':
