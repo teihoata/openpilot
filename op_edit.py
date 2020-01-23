@@ -99,7 +99,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
       if not status:
         continue
 
-      if extra_info and not any([isinstance(new_value, typ) for typ in allowed_types]):
+      if live and not any([isinstance(new_value, typ) for typ in allowed_types]):
         self.message('The type of data you entered ({}) is not allowed with this parameter!\n'.format(str(type(new_value)).split("'")[1]))
         continue
 
