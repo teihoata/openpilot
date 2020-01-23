@@ -11,7 +11,7 @@ class opTune:
 
   def start(self):
     print('Welcome to the opParams command line live tuner!')
-    editable = [p for p in self.op_params.get() if p in self.op_params.default_params and self.op_params.default_params[p]['live']]
+    editable = [p for p in self.op_params.get(force_update=True) if p in self.op_params.default_params and 'live' in self.op_params.default_params[p] and self.op_params.default_params[p]['live']]
     while True:
       print('Choose a parameter to tune:')
       print('\n'.join(['{}. {}'.format(idx + 1, p) for idx, p in enumerate(editable)]))
