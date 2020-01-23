@@ -80,10 +80,8 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         print('- Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in allowed_types])))
         if live:
           print('- This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
-          print('It\'s recommended to use the new opTune module! It\'s been streamlined to make live tuning easier and quicker.')
-          print('Just exit out of this and type:')
-          print('python op_tune.py')
-          print('In the directory /data/openpilot\n')
+          print('Try out opTune! It\'s designed to help you live tune parameters quicker.')
+          print('Just exit out of this and type: \'python op_tune.py\'')
         else:
           print()
       print('Enter your new value:')
