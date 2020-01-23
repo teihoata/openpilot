@@ -84,7 +84,7 @@ Parameters are stored at `/data/op_params.json`
 
 Live tuning support
 -----
-This has just been added and currently only the `camera_offset` parameter is officially supported.
+This has just been added and currently only the `camera_offset` and `lane_hug_angle_offset` parameters are supported.
 - Just start opEdit with the instructions above and pick a parameter. It will let you know if it supports live tuning, if so, updates will take affect within 5 seconds!
 - Alternatively, you can use the new opTune module to live tune quicker and easier! It stays in the parameter edit view so you can more easily experiment with values. opTune show below:
 
