@@ -131,7 +131,7 @@ class opParams:
         if not read_status:
           time.sleep(1/100.)
           self.params, _ = read_params(self.params_file, self.format_default_params())  # if the file was being written to, retry once
-      self.last_read_time = time.time()
+        self.last_read_time = time.time()
 
   def delete(self, key):
     if key in self.params:
