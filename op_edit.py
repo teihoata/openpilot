@@ -77,12 +77,12 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
 
       to_print = []
       if has_description:
-        to_print.append('- Description: {}'.format(self.op_params.default_params[chosen_key]['description'].replace('\n', '\n  ')))
+        to_print.append('>> Description: {}'.format(self.op_params.default_params[chosen_key]['description'].replace('\n', '\n  ')))
       if has_allowed_types:
         allowed_types = self.op_params.default_params[chosen_key]['allowed_types']
-        to_print.append('- Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in allowed_types])))
+        to_print.append('>> Allowed types: {}'.format(', '.join([str(i).split("'")[1] for i in allowed_types])))
       if live:
-        to_print.append('- This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
+        to_print.append('>> This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
         to_print.append('Try out opTune! It\'s designed to help you live tune parameters quicker.')
         to_print.append('Just exit out of this and type: \'python op_tune.py\'')
 
