@@ -119,7 +119,7 @@ class opParams:
 
   def get(self, key=None, default=None, force_update=False):  # can specify a default value if key doesn't exist
     self.update_params(key, force_update)
-    if key is None or force_update:
+    if key is None:
       return self.params
     return self.params[key] if key in self.params else default
 
