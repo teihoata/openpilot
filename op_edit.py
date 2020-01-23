@@ -81,7 +81,7 @@ class opEdit:  # use by running `python /data/openpilot/op_edit.py`
         if live:
           print('- This parameter supports live tuning! Updates should take affect within 5 seconds.\n')
           print('Try out opTune! It\'s designed to help you live tune parameters quicker.')
-          print('Just exit out of this and type: \'python op_tune.py\'')
+          print('Just exit out of this and type: \'python op_tune.py\'\n')
         else:
           print()
       print('Enter your new value:')
