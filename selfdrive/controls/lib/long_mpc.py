@@ -36,7 +36,8 @@ class LongitudinalMpc():
     self.lead_data = {'v_lead': None, 'x_lead': None, 'a_lead': None, 'status': False}
     self.df_data = {"v_leads": [], "v_egos": []}  # dynamic follow data
     self.last_cost = 0.0
-    self.customTR = self.op_params.get('following_distance', None)
+    self.df_profile = self.op_params.get('dynamic_follow', 'relaxed').strip().lower()
+    self.sng = False
 
   def set_pm(self, pm):
     self.pm = pm
@@ -75,8 +76,6 @@ class LongitudinalMpc():
   def get_TR(self, CS):
     if not self.lead_data['status'] or travis:
       TR = 1.8
-    elif self.customTR is not None:
-      TR = clip(self.customTR, 0.9, 2.7)
     else:
       self.store_lead_data()
       TR = self.dynamic_follow(CS)
@@ -102,17 +101,18 @@ class LongitudinalMpc():
       self.last_cost = cost
 
   def store_lead_data(self):
-    v_lead_retention = 2.15  # seconds
-    v_ego_retention = 2.5
+    v_lead_retention = 1.75  # keep only last x seconds in samples
+    v_ego_retention = 2.0
 
+    cur_time = time.time()
     if self.lead_data['status']:
       self.df_data['v_leads'] = [sample for sample in self.df_data['v_leads'] if
-                                 time.time() - sample['time'] <= v_lead_retention
+                                 cur_time - sample['time'] <= v_lead_retention
                                  and not self.new_lead]  # reset when new lead
-      self.df_data['v_leads'].append({'v_lead': self.lead_data['v_lead'], 'time': time.time()})
+      self.df_data['v_leads'].append({'v_lead': self.lead_data['v_lead'], 'time': cur_time})
 
-    self.df_data['v_egos'] = [sample for sample in self.df_data['v_egos'] if time.time() - sample['time'] <= v_ego_retention]
-    self.df_data['v_egos'].append({'v_ego': self.car_data['v_ego'], 'time': time.time()})
+    self.df_data['v_egos'] = [sample for sample in self.df_data['v_egos'] if cur_time - sample['time'] <= v_ego_retention]
+    self.df_data['v_egos'].append({'v_ego': self.car_data['v_ego'], 'time': cur_time})
 
   def lead_accel_over_time(self):
     min_consider_time = 1.0  # minimum amount of time required to consider calculation
@@ -120,28 +120,44 @@ class LongitudinalMpc():
     if len(self.df_data['v_leads']):  # if not empty
       elapsed = self.df_data['v_leads'][-1]['time'] - self.df_data['v_leads'][0]['time']
       if elapsed > min_consider_time:  # if greater than min time (not 0)
-        v_diff = self.df_data['v_leads'][-1]['v_lead'] - self.df_data['v_leads'][0]['v_lead']
-        calculated_accel = v_diff / elapsed
-        if abs(calculated_accel) > abs(a_lead) and a_lead < 0.33528:  # if a_lead is greater than calculated accel (over last 1.5s, use that) and if lead accel is not above 0.75 mph/s
-          a_lead = calculated_accel
+        a_calculated = (self.df_data['v_leads'][-1]['v_lead'] - self.df_data['v_leads'][0]['v_lead']) / elapsed  # delta speed / delta time
+        # old version: # if abs(a_calculated) > abs(a_lead) and a_lead < 0.33528:  # if a_lead is greater than calculated accel (over last 1.5s, use that) and if lead accel is not above 0.75 mph/s
+        #   a_lead = a_calculated
+
+        # long version of below: if (a_calculated < 0 and a_lead >= 0 and a_lead < -a_calculated * 0.5) or (a_calculated > 0 and a_lead <= 0 and -a_lead > a_calculated * 0.5) or (a_lead * a_calculated > 0 and abs(a_calculated) > abs(a_lead)):
+        if (a_calculated < 0 <= a_lead < -a_calculated * 0.55) or (a_calculated > 0 >= a_lead and -a_lead < a_calculated * 0.45) or (a_lead * a_calculated > 0 and abs(a_calculated) > abs(a_lead)):
+          a_lead = a_calculated
+
     return a_lead  # if above doesn't execute, we'll return a_lead from radar
 
   def dynamic_follow(self, CS):
-    # x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocities
-    # y_mod = [1.102, 1.12, 1.14, 1.168, 1.21, 1.273, 1.36, 1.411, 1.543, 1.62, 1.664, 1.736, 1.853]  # TRs
-    # x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]
-    # y_mod = [1.385, 1.394, 1.406, 1.421, 1.444, 1.474, 1.516, 1.538, 1.554, 1.604, 1.627, 1.658, 1.705]
-    x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]
-    y_mod = [1.385, 1.394, 1.406, 1.421, 1.444, 1.474, 1.516, 1.538, 1.554, 1.594, 1.612, 1.637, 1.675]
+    self.df_profile = self.op_params.get('dynamic_follow', 'relaxed').strip().lower()
+    if self.df_profile == 'traffic':  # for in congested traffic, might need to reduce TR at lower speeds
+      x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocities
+      y_dist = [1.36, 1.369, 1.381, 1.396, 1.419, 1.449, 1.483, 1.495, 1.504, 1.526, 1.536, 1.55, 1.572]  # TRs
+    elif self.df_profile == 'roadtrip':
+      # x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 29.5452, 33.528, 35.7632, 40.2336]  # todo: test 15-30% higher above 30m/s
+      # y_dist = [1.41, 1.419, 1.431, 1.446, 1.47, 1.5, 1.542, 1.563, 1.581, 1.617, 1.658, 1.696, 1.756]
+      x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 29.5452, 33.528, 35.7632, 40.2336]
+      y_dist = [1.41, 1.419, 1.431, 1.446, 1.47, 1.5, 1.542, 1.563, 1.581, 1.61739, 1.649, 1.678, 1.724]
+      # x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 29.5452, 33.528, 35.7632, 40.2336]  # todo: slightly closer above 10m/s, this one might be more balanced
+      # y_dist = [1.41, 1.419, 1.431, 1.446, 1.47, 1.5, 1.542, 1.56, 1.576, 1.608, 1.635, 1.66, 1.7]
+    else:  # default to relaxed/stock
+      x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]
+      y_dist = [1.385, 1.394, 1.406, 1.421, 1.444, 1.474, 1.516, 1.538, 1.554, 1.594, 1.612, 1.637, 1.675]
 
-    sng_TR = 1.8  # stop and go TR
+    sng_TR = 1.7  # reacceleration stop and go TR
     sng_speed = 15.0 * CV.MPH_TO_MS
 
-    if self.car_data['v_ego'] >= sng_speed or self.df_data['v_egos'][0]['v_ego'] >= self.car_data['v_ego']:  # if above 15 mph OR we're decelerating to a stop, keep shorter TR. when we reaccelerate, use 1.8s and slowly decrease
-      TR = interp(self.car_data['v_ego'], x_vel, y_mod)
+    if self.car_data['v_ego'] > sng_speed:  # keep sng distance until we're above sng speed again
+      self.sng = False
+
+    if (self.car_data['v_ego'] >= sng_speed or self.df_data['v_egos'][0]['v_ego'] >= self.car_data['v_ego']) and not self.sng:  # if above 15 mph OR we're decelerating to a stop, keep shorter TR. when we reaccelerate, use sng_TR and slowly decrease
+      TR = interp(self.car_data['v_ego'], x_vel, y_dist)
     else:  # this allows us to get closer to the lead car when stopping, while being able to have smooth stop and go when reaccelerating
+      self.sng = True
       x = [sng_speed / 3.0, sng_speed]  # decrease TR between 5 and 15 mph from 1.8s to defined TR above at 15mph while accelerating
-      y = [sng_TR, interp(sng_speed, x_vel, y_mod)]
+      y = [sng_TR, interp(sng_speed, x_vel, y_dist)]
       TR = interp(self.car_data['v_ego'], x, y)
 
     # Dynamic follow modifications (the secret sauce)
